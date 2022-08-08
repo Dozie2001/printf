@@ -33,12 +33,12 @@ int printf_rot13(va_list args);
 int printf_int(va_list args);
 int printf_dec(va_list args);
 int _strlen(char *s);
-int 8_strcpy(char *dest, char *src);
+int _strcpy(char *dest, char *src);
 int _strlenc(const char *s);
 int rev_string(char *s);
 int printf_37(void);
 int printf_char(va_list val);
 int _putchar(char c);
-int _printf(const char char *format, ...);
+int _printf(const char *format, ...);
 
 #endif

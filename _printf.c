@@ -1,13 +1,13 @@
 #include "main.h"
 
 void cleanup(va_list args, buffer_t *output);
-int run_printf(const char *format, va_list args);
+int run_printf(const char *format, va_list args, buffer_t *output);
 int _printf(const char *format, ...);
 
 /**
- * cleanup - Peforms cleanup operations for _printf
- * @args: A va_list of arguments provided to _printf
- * @output: A buffer_t struct
+ * cleanup - Peforms cleanup operations for _printf.
+ * @args: A va_list of arguments provided to _printf.
+ * @output: A buffer_t struct.
  */
 void cleanup(va_list args, buffer_t *output)
 {
@@ -22,7 +22,7 @@ void cleanup(va_list args, buffer_t *output)
  * @output: A buffer_t struct containing a buffer.
  * @args: A va_list of arguments.
  *
- *Return: The number of characters stored to output.
+ * Return: The number of characters stored to output.
  */
 int run_printf(const char *format, va_list args, buffer_t *output)
 {
@@ -43,17 +43,15 @@ int run_printf(const char *format, va_list args, buffer_t *output)
 			prec = handle_precision(args, format + i + tmp + 1,
 					&tmp);
 			len = handle_length(format + i + tmp + 1, &tmp);
-			f = handle_specifiers(format + i + tmp + 1);
 
+			f = handle_specifiers(format + i + tmp + 1);
 			if (f != NULL)
 			{
-				i += 1;
+				i += tmp + 1;
 				ret += f(args, output, flags, wid, prec, len);
 				continue;
-
 			}
-
-			else if (*(format + 1 + tmp + 1) == '\0')
+			else if (*(format + i + tmp + 1) == '\0')
 			{
 				ret = -1;
 				break;
@@ -67,10 +65,10 @@ int run_printf(const char *format, va_list args, buffer_t *output)
 }
 
 /**
- *  _printf - Outputs a formatted string.
- *  @format: Character string to print - may contain directives.
+ * _printf - Outputs a formatted string.
+ * @format: Character string to print - may contain directives.
  *
- *  Return: The number of characters printed
+ * Return: The number of characters printed.
  */
 int _printf(const char *format, ...)
 {
@@ -83,8 +81,10 @@ int _printf(const char *format, ...)
 	output = init_buffer();
 	if (output == NULL)
 		return (-1);
+
 	va_start(args, format);
 
 	ret = run_printf(format, args, output);
+
 	return (ret);
 }

@@ -1,90 +1,125 @@
 #include "main.h"
 
-void cleanup(va_list args, buffer_t *output);
-int run_printf(const char *format, va_list args, buffer_t *output);
-int _printf(const char *format, ...);
-
 /**
- * cleanup - Peforms cleanup operations for _printf.
- * @args: A va_list of arguments provided to _printf.
- * @output: A buffer_t struct.
+ * print_str - prints a string
+ * @format: formats in str
+ * @count: current index
+ * @args: argument list
+ * @flag: flags array
+ *
+ * Return: number of characters printed
  */
-void cleanup(va_list args, buffer_t *output)
+int print_str(const char *format, int count, va_list args, int *flag)
 {
-	va_end(args);
-	write(1, output->start, output->len);
-	free_buffer(output);
+	char *s;
+	int retval;
+
+	count = 0;
+	s = va_arg(args, char *);
+	if (s == NULL)
+		return (print_string("(nil)", flag, count));
+	s = (format[count] == 's') ? s : upper_str(s);
+	retval = print_string(s, flag, count);
+	/*free(s);*/
+	return (retval);
 }
 
 /**
- * run_printf - Reads through the format string for _printf.
- * @format: Character string to print - may contain directives.
- * @output: A buffer_t struct containing a buffer.
- * @args: A va_list of arguments.
+ * print_int - prints a string
+ * @format: formats in str
+ * @count: current index
+ * @args: argument list
+ * @flag: flags array
  *
- * Return: The number of characters stored to output.
+ * Return: number of characters printed
  */
-int run_printf(const char *format, va_list args, buffer_t *output)
+int print_int(const char *format, int count, va_list args, int *flag)
 {
-	int i, wid, prec, ret = 0;
-	char tmp;
-	unsigned char flags, len;
-	unsigned int (*f)(va_list, buffer_t *,
-			unsigned char, int, int, unsigned char);
+	long n;
+	char buffer[1024];
 
-	for (i = 0; *(format + i); i++)
+	n = va_arg(args, int);
+	signedNumberToString(n, DECIMAL, buffer, format[count], flag);
+	return (print_string(buffer, flag, 1));
+
+}
+/**
+ * isAlpha - check if a char is alphabet
+ * @c: chracter to check
+ *
+ * Return: 0 if false 1 for true
+ */
+int isAlpha(char c)
+{
+	return ((c <= 'z' && c >= 'a') ||
+			(c <= 'Z' && c >= 'A'));
+}
+
+/**
+ * isDigit - check if a number is digit
+ * @c: character to check
+ *
+ * Return: 1 for true 0 for false
+ */
+int isDigit(char c)
+{
+	if (c < 48 || c > 58)
+		return (0);
+	return (1);
+}
+
+/**
+ * setFlags - sets flags to represent the flg
+ * Description: flags is an array of length 5
+ * flags[0]: is set if (-) is found
+ * flags[1]: is set if (+/spc) is found
+ * flags[2]: is set if (0) is found
+ * flags[3]: is set if (#) is found
+ * flags[4]: is set if (digits) is found
+ *
+ * @flags: pointer to flags array
+ * @fmt: pointer to format strings
+ * @j: current index on fmt
+ * @args: pointer to arguments list
+ *
+ * Return: number of chars checked
+ */
+int setFlags(const char *fmt, int *flags, int j, va_list args)
+{
+	int i = j;
+
+	flags[0] = flags[1] = flags[2] = flags[3] = flags[4] = 0;
+	while ((!isDigit(fmt[i]) && !isAlpha(fmt[i])) || fmt[i] == '0')
 	{
-		len = 0;
-		if (*(format + i) == '%')
+		switch (fmt[i])
 		{
-			tmp = 0;
-			flags = handle_flags(format + i + 1, &tmp);
-			wid = handle_width(args, format + i + tmp + 1, &tmp);
-			prec = handle_precision(args, format + i + tmp + 1,
-					&tmp);
-			len = handle_length(format + i + tmp + 1, &tmp);
-
-			f = handle_specifiers(format + i + tmp + 1);
-			if (f != NULL)
-			{
-				i += tmp + 1;
-				ret += f(args, output, flags, wid, prec, len);
-				continue;
-			}
-			else if (*(format + i + tmp + 1) == '\0')
-			{
-				ret = -1;
-				break;
-			}
+		case '-':
+			flags[0] = 1;
+			break;
+		case ' ':
+		case '+':
+			flags[1] = fmt[i];
+			break;
+		case '0':
+			flags[2] = 1;
+			break;
+		case '#':
+			flags[3] = 1;
+			break;
+		case '*':
+			flags[4] = va_arg(args, int);
+			break;
+		default:
+			break;
 		}
-		ret += _memcpy(output, (format + i), 1);
-		i += (len != 0) ? 1 : 0;
+		i++;
 	}
-	cleanup(args, output);
-	return (ret);
-}
-
-/**
- * _printf - Outputs a formatted string.
- * @format: Character string to print - may contain directives.
- *
- * Return: The number of characters printed.
- */
-int _printf(const char *format, ...)
-{
-	buffer_t *output;
-	va_list args;
-	int ret;
-
-	if (format == NULL)
-		return (-1);
-	output = init_buffer();
-	if (output == NULL)
-		return (-1);
-
-	va_start(args, format);
-
-	ret = run_printf(format, args, output);
-
-	return (ret);
+	if (isDigit(fmt[i]))
+		flags[4] = 0;
+	while (isDigit(fmt[i]))
+	{
+		flags[4] *= 10;
+		flags[4] += fmt[i++] - '0';
+	}
+	return (i - j);
 }
